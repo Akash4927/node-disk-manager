@@ -11,14 +11,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openebs/node-disk-manager/integration_test/minikube_adm"
+	"github.com/akash4927/CITF/minikube_adm"
 
+	k8sUtil "github.com/akash4927/CITF/k8s_util"
 	"github.com/openebs/node-disk-manager/integration_test/k8s_util"
 
 	"io/ioutil"
 
+	. "github.com/akash4927/CITF/common"
 	"github.com/golang/glog"
-	. "github.com/openebs/node-disk-manager/integration_test/common"
 	core_v1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 )
@@ -150,7 +151,7 @@ func GetNDMLogAndValidate() (bool, error) {
 		return false, err
 	}
 
-	log, err := k8sutil.GetLog(ndmPod.Name, ndmPod.Namespace)
+	log, err := k8sUtil.GetLog(ndmPod.Name, ndmPod.Namespace)
 	if err != nil {
 		return false, err
 	}
@@ -191,7 +192,7 @@ func YAMLPrepare() (v1beta1.DaemonSet, error) {
 	}
 
 	// Get the DaemonSet Struct
-	ds, err := k8sutil.GetDaemonsetStructFromYamlBytes(yamlBytes)
+	ds, err := k8sUtil.GetDaemonsetStructFromYamlBytes(yamlBytes)
 	if err != nil {
 		return v1beta1.DaemonSet{}, err
 	}
@@ -246,7 +247,7 @@ func PrepareAndApplyYAML() error {
 
 	fmt.Println(PrettyString(dsManifest))
 
-	dsManifest, err = k8sutil.ApplyDSFromManifestStruct(dsManifest)
+	dsManifest, err = k8sUtil.ApplyDSFromManifestStruct(dsManifest)
 	fmt.Println("After applying...")
 	fmt.Println(PrettyString(dsManifest))
 	return err
@@ -311,7 +312,7 @@ func GetNDMDeviceListOutputFromThePod() (map[string]map[string]string, error) {
 		return nil, err
 	}
 
-	ndmOutputStr, err := k8sutil.ExecToPod("ndm device list", ndmPod.Name, ndmPod.Namespace)
+	ndmOutputStr, err := k8sUtil.ExecToPod("ndm device list", ndmPod.Name, ndmPod.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +429,7 @@ func WaitTillDefaultNSisReady() {
 
 	ndmNS := core_v1.Namespace{}
 	for i := 0; i < maxTry; i++ {
-		namespaces, err := k8sutil.GetAllNamespacesCoreV1NamespaceArray()
+		namespaces, err := k8sUtil.GetAllNamespacesCoreV1NamespaceArray()
 		if err == nil {
 			for _, namespace := range namespaces {
 				if namespace.Name == GetNDMNamespace() {
@@ -514,7 +515,7 @@ func WaitTillNDMisUp() {
 		if podState.Running == nil {
 			// At this point all states are None,
 			// so just showing phase is enough
-			fmt.Printf("Waiting as pod-phase: %q\n", k8sutil.GetPodPhase(ndmPod))
+			fmt.Printf("Waiting as pod-phase: %q\n", k8sUtil.GetPodPhase(ndmPod))
 			time.Sleep(WaitTimeUnit)
 		} else {
 			break

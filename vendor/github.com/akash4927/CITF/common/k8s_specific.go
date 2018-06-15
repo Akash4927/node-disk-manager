@@ -14,6 +14,8 @@ import (
 	// _ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
+const debug = false
+
 // Different phases of Namespace
 
 // NsGoodPhases is an array of phases of the Namespace which are considered to be good
@@ -84,8 +86,8 @@ func IsPodStateGood(podState string) bool {
 func GetClientConfig() (*rest.Config, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		if Debug {
-			fmt.Printf("Unable to create config. Error: %+v\n", err)
+		if debug {
+			fmt.Printf("Unable to create config. Error: %+v", err)
 		}
 		err1 := err
 		kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")

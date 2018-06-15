@@ -32,6 +32,7 @@ EXTERNAL_TOOLS=\
 	gopkg.in/alecthomas/gometalinter.v1
 
 vet:
+Flag: composites
 	go list ./... | grep -v "./vendor/*" | xargs go vet
 
 fmt:

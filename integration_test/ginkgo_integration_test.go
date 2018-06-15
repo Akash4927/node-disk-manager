@@ -3,9 +3,9 @@ package integrationtest
 import (
 	"testing"
 
+	"github.com/akash4927/CITF/minikube_adm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/openebs/node-disk-manager/integration_test/minikube_adm"
 	"github.com/openebs/node-disk-manager/integration_test/ndm_util"
 )
 

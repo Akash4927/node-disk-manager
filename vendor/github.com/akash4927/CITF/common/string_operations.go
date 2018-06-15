@@ -26,7 +26,8 @@ func TrimWhitespaces(str string) string {
 func PrettyString(in interface{}) string {
 	jsonStr, err := json.MarshalIndent(in, "", "    ")
 	if err != nil {
-		if Debug {
+		// debug decleared in k8s_specific.go
+		if debug {
 			err := fmt.Errorf("Unable to marshal, Error: %+v", err)
 			if err != nil {
 				fmt.Printf("Unable to marshal, Error: %+v\n", err)

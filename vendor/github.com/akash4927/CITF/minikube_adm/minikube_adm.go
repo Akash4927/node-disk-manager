@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/openebs/node-disk-manager/integration_test/common"
+	. "github.com/akash4927/CITF/common"
 	"github.com/openebs/node-disk-manager/pkg/util"
 )
 
@@ -31,10 +31,35 @@ func init() {
 	}
 }
 
-// waitForDotKubeDirToBeCreated waits for `.kube` to be created
-func waitForDotKubeDirToBeCreated() {
-	homeDir := os.Getenv("HOME")
+// StartMinikube method starts minikube with `--vm-driver=none` option.
+func StartMinikube() {
+	err := runCommand("minikube start --vm-driver=none")
+	// We can also use following:
+	// "minikube start --vm-driver=none --feature-gates=MountPropagation=true --cpus=1 --memory=1024 --v=3 --alsologtostderr"
+	util.CheckErr(err, util.Fatal)
 
+	envChangeMinikubeNoneUser := os.Getenv("CHANGE_MINIKUBE_NONE_USER")
+	fmt.Printf("Environ CHANGE_MINIKUBE_NONE_USER = %q\n", envChangeMinikubeNoneUser)
+	if envChangeMinikubeNoneUser == "true" {
+		// Below commands shall automatically run in this case.
+		fmt.Println("Returning from setup.")
+		return
+	}
+
+	// Run the commands required when run minikube as --vm-driver=none
+	// Assumption: Environment variables `USER` and `HOME` is well defined.
+	userName := os.Getenv("USER")
+	homeDir := os.Getenv("HOME")
+	commands := []string{
+		"mv /root/.kube " + homeDir + "/.kube",
+		"chown -R " + userName + " " + homeDir + "/.kube",
+		"chgrp -R " + userName + " " + homeDir + "/.kube",
+		"mv /root/.minikube " + homeDir + "/.minikube",
+		"chown -R " + userName + " " + homeDir + "/.minikube",
+		"chgrp -R " + userName + " " + homeDir + "/.minikube",
+	}
+
+	// Wait for `.kube` to be created
 	fmt.Println("Waiting for `.kube` to be created...")
 	for {
 		if _, err := os.Stat(path.Join(homeDir, ".kube")); err == nil {
@@ -46,12 +71,8 @@ func waitForDotKubeDirToBeCreated() {
 		}
 		time.Sleep(time.Second)
 	}
-}
 
-// waitForDotMinikubeDirToBeCreated waits for `.minikube` to be created
-func waitForDotMinikubeDirToBeCreated() {
-	homeDir := os.Getenv("HOME")
-
+	// Wait for `.minikube` to be created
 	fmt.Println("Waiting for `.minikube` to be created...")
 	for {
 		if _, err := os.Stat(path.Join(homeDir, ".minikube")); err == nil {
@@ -62,21 +83,6 @@ func waitForDotMinikubeDirToBeCreated() {
 			break
 		}
 		time.Sleep(time.Second)
-	}
-}
-
-// runPostStartCommandsForMinikube runs the commands required when run minikube as --vm-driver=none
-// Assumption: Environment variables `USER` and `HOME` is well defined.
-func runPostStartCommandsForMinikubeNoneDriver() {
-	userName := os.Getenv("USER")
-	homeDir := os.Getenv("HOME")
-	commands := []string{
-		"mv /root/.kube " + homeDir + "/.kube",
-		"chown -R " + userName + " " + homeDir + "/.kube",
-		"chgrp -R " + userName + " " + homeDir + "/.kube",
-		"mv /root/.minikube " + homeDir + "/.minikube",
-		"chown -R " + userName + " " + homeDir + "/.minikube",
-		"chgrp -R " + userName + " " + homeDir + "/.minikube",
 	}
 
 	for _, command := range commands {
@@ -90,32 +96,6 @@ func runPostStartCommandsForMinikubeNoneDriver() {
 	}
 }
 
-// StartMinikube method starts minikube with `--vm-driver=none` option.
-func StartMinikube() {
-	err := runCommand("minikube start --vm-driver=none")
-	// We can also use following:
-	// "minikube start --vm-driver=none --feature-gates=MountPropagation=true --cpus=1 --memory=1024 --v=3 --alsologtostderr"
-	util.CheckErr(err, util.Fatal)
-
-	envChangeMinikubeNoneUser := os.Getenv("CHANGE_MINIKUBE_NONE_USER")
-	if Debug {
-		fmt.Printf("Environ CHANGE_MINIKUBE_NONE_USER = %q\n", envChangeMinikubeNoneUser)
-	}
-	if envChangeMinikubeNoneUser == "true" {
-		// Below commands shall automatically run in this case.
-		if Debug {
-			fmt.Println("Returning from setup.")
-		}
-		return
-	}
-
-	waitForDotKubeDirToBeCreated()
-
-	waitForDotMinikubeDirToBeCreated()
-
-	runPostStartCommandsForMinikubeNoneDriver()
-}
-
 // Setup checks if a teardown is required before minikube start
 // if so it does that and then start the minikube.
 // It does nothing when minikube is already running.
@@ -123,13 +103,10 @@ func StartMinikube() {
 func Setup() {
 	// Minikube Status timeout is 1 minute
 	minikubeStatus, err := CheckStatusTillTimeout(time.Minute)
-
-	if Debug {
-		if err != nil {
-			fmt.Printf("Error occured while checking minikube status. Error: %+v\n", err)
-		} else {
-			fmt.Printf("minikube status: %q\n", minikubeStatus)
-		}
+	if err != nil {
+		fmt.Printf("Error occured while checking minikube status. Error: %+v\n", err)
+	} else {
+		fmt.Printf("minikube status: %q\n", minikubeStatus)
 	}
 
 	teardownRequired := false
@@ -141,7 +118,7 @@ func Setup() {
 		os.Exit(1)
 	}
 	if status == "" { // This means cluster itself is not there
-		fmt.Println("cluster is not up. will start the machine")
+		fmt.Println("cluster is not up. so will start the machine")
 		startRequired = true // So, Start the minikube
 	} else if status == "Stopped" { // Cluster is there but it is stopped
 		fmt.Println("minikube cluster is present but not \"Running\", so will tearing down the machine then start again.")
